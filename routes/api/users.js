@@ -4,7 +4,7 @@ const { check, validationResult } = require("express-validator/check");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
-const auth = require("../../middleware/auth");
+const requireLogin = require("../../middleware/requireLogin");
 const config = require("config");
 
 // @route         POST api/users
@@ -22,19 +22,13 @@ router.post(
     check(
       "password",
       "Please enter a password with 6 or mare characters"
-    ).isLength({ min: 6 }),
-    check("address", "Address is required")
-      .not()
-      .isEmpty(),
-    check("phoneNumber", "Phone number is required")
-      .not()
-      .isEmpty()
+    ).isLength({ min: 6 })
   ],
   async (req, res) => {
     const errors = validationResult(req);
 
     if (errors.isEmpty()) {
-      const { name, email, password, address, phoneNumber } = req.body;
+      const { name, email, password, role } = req.body;
 
       try {
         // See if user exists
@@ -48,8 +42,7 @@ router.post(
           name,
           email,
           password,
-          phoneNumber,
-          address
+          role
         });
 
         // Encrypt password
@@ -84,34 +77,5 @@ router.post(
     }
   }
 );
-
-// @route         GET api/users
-// @description   Get all users
-// @access        Private
-router.get("/", auth, async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server error");
-  }
-});
-
-// @route         GET api/users/me
-// @description   Get current user
-// @access        Private
-router.get("/me", auth, async (req, res) => {
-  try {
-    const user = await User.findOne({ _id: req.user.id });
-
-    if (!user) {
-      return res.status(400).json({ msg: "Couldn't find user" });
-    }
-  } catch (err) {
-    console.errror(err.message);
-    res.status(500).send("Server error");
-  }
-});
 
 module.exports = router;

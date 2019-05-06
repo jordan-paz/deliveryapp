@@ -8,8 +8,14 @@ const OrderSchema = new Schema({
   },
   productsOrdered: [
     {
-      type: Schema.Types.ObjectId,
-      ref: "product"
+      productID: {
+        type: Schema.Types.ObjectId,
+        ref: "product"
+      },
+      quantity: {
+        type: Number,
+        required: true
+      }
     }
   ],
   total: {
@@ -22,6 +28,7 @@ const OrderSchema = new Schema({
   },
   orderStatus: {
     type: String,
+    default: "pending",
     required: true
   },
   notes: {
