@@ -1,0 +1,4 @@
+{
+  "mongoURI": "mongodb+srv://jordanpaz:toadzemon@cluster0-274kx.mongodb.net/test?retryWrites=true",
+  "jwtSecret": "marceline the vanpire queen"
+}
