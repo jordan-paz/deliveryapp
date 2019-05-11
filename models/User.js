@@ -25,7 +25,7 @@ const UserSchema = new Schema({
   },
   role: {
     type: String,
-    default: "user"
+    default: "customer"
   }
 });
 

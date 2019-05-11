@@ -6,23 +6,6 @@ const DriverProfile = require("../../models/DriverProfile");
 const requireLogin = require("../../middleware/requireLogin");
 const requireRole = require("../../middleware/requireRole");
 
-// @route         GET api/driverProfile
-// @description   Get all driver profiles
-// @access        Public
-router.get("/", [requireLogin, requireRole("driver")], async (req, res) => {
-  try {
-    const drivers = await DriverProfile.find().populate("user", [
-      "name",
-      "phoneNumber",
-      "avatar"
-    ]);
-    res.json(drivers);
-  } catch (err) {
-    console.error(err.message);
-    res.status(400).send("Server error");
-  }
-});
-
 // @route         POST api/driverprofile
 // @description   Create a driverprofile
 // @access        Private, Driver only
@@ -63,6 +46,23 @@ router.post("/", requireLogin, async (req, res) => {
   }
 });
 
+// @route         GET api/driverProfile
+// @description   Get all driver profiles
+// @access        Public
+router.get("/", [requireLogin, requireRole("driver")], async (req, res) => {
+  try {
+    const drivers = await DriverProfile.find().populate("user", [
+      "name",
+      "phoneNumber",
+      "avatar"
+    ]);
+    res.json(drivers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(400).send("Server error");
+  }
+});
+
 // @route         GET api/driverProfile/:user_id
 // @description   Get driver by user id
 // @access        Private, Driver only
@@ -94,5 +94,9 @@ router.put("/", [requireLogin, requireRole("driver")], async (req, res) => {
   try {
   } catch (err) {}
 });
+
+// @route         DELETE api/driverProfile
+// @description   Delete driver profile and user associated
+// @access        Private, Driver only
 
 module.exports = router;

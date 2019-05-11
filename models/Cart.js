@@ -6,7 +6,7 @@ const OrderSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "user"
   },
-  orderDetails: [
+  items: [
     {
       productID: {
         type: Schema.Types.ObjectId,
@@ -15,26 +15,11 @@ const OrderSchema = new Schema({
       },
       quantity: {
         type: Number,
+        default: 1,
         required: true
       }
     }
-  ],
-  total: {
-    type: Number,
-    required: true
-  },
-  assignedDriver: {
-    type: Schema.Types.ObjectId,
-    ref: "user"
-  },
-  orderStatus: {
-    type: String,
-    default: "Order sent",
-    required: true
-  },
-  notes: {
-    type: String
-  }
+  ]
 });
 
-module.exports = Order = mongoose.model("order", OrderSchema);
+module.exports = Cart = mongoose.model("Cart", OrderSchema);

@@ -6,19 +6,6 @@ const Product = require("../../models/Product");
 const requireLogin = require("../../middleware/requireLogin");
 const requireRole = require("../../middleware/requireRole");
 
-// @route         GET api/products
-// @description   Get all products
-// @access        Public
-router.get("/", requireRole("driver"), async (req, res) => {
-  try {
-    const products = Product.find();
-    res.json(products);
-  } catch (err) {
-    console.error(err.message);
-    res.status(400).send("Server error");
-  }
-});
-
 // @route         POST api/products
 // @description   Create product
 // @access        Public
@@ -76,5 +63,30 @@ router.post(
     }
   }
 );
+
+// @route         GET api/products
+// @description   Get all products
+// @access        Users
+router.get("/", requireRole("driver"), async (req, res) => {
+  try {
+    const products = Product.find();
+    res.json(products);
+  } catch (err) {
+    console.error(err.message);
+    res.status(400).send("Server error");
+  }
+});
+
+// @route         GET api/products/:product_id
+// @description   Get a product by ID
+// @access        Users
+
+// @route         PUT api/products/:product_id
+// @description   Edit a product by product ID
+// @access        Customer
+
+// @route         DELETE api/products/:product_id
+// @description   Delete a product by product ID
+// @access        Public
 
 module.exports = router;
