@@ -104,8 +104,23 @@ router.put("/", [requireLogin], async (req, res) => {
   } catch (err) {}
 });
 
-// @route         DELETE api/customerProfile/:user_id
+// @route         DELETE api/customerProfile/
 // @description   Delete customerProfile & user
 // @access        Private
+router.delete("/", requireLogin, async (req, res) => {
+  try {
+    const profile = await CustomerProfile.findOne({ user: req.user.id });
+    if (!profile) {
+      return res.status(400).json({ msg: "No profile found for this user" });
+    }
+    await profile.remove();
+    res.json({ msg: "Profile removed" });
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Profile not found" });
+    }
+  }
+});
 
 module.exports = router;

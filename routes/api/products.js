@@ -67,9 +67,10 @@ router.post(
 // @route         GET api/products
 // @description   Get all products
 // @access        Users
-router.get("/", requireRole("driver"), async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const products = Product.find();
+    const products = await Product.find();
+    console.log(products);
     res.json(products);
   } catch (err) {
     console.error(err.message);
