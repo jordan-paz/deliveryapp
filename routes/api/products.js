@@ -70,7 +70,6 @@ router.post(
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find();
-    console.log(products);
     res.json(products);
   } catch (err) {
     console.error(err.message);

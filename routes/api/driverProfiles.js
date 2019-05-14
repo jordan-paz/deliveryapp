@@ -15,7 +15,11 @@ router.post("/", requireLogin, async (req, res) => {
   // Build profile object
   const profileFields = {};
   profileFields.user = req.user.id;
-  if (inventory) profileFields.inventory = inventory;
+  if (inventory) {
+    profileFields.inventory = inventory;
+  } else {
+    profileFields.inventory = [];
+  }
   if (currentOrder) profileFields.currentOrder = currentOrder;
   if (pastOrders) profileFields.pastOrders = pastOrders;
   if (driverStatus) profileFields.driverStatus = driverStatus;

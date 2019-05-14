@@ -15,9 +15,10 @@ module.exports = role => async (req, res, next) => {
     const user = await User.findOne({ _id: userId });
 
     if (user && user.role === role) {
+      req.user = decoded.user;
       next();
     } else {
-      res.status(403).json({ msg: "You are not authorized to see this." });
+      res.status(403).json({ msg: "You are not authorized." });
     }
   } catch (err) {
     res.status(401).json({ msg: "Token is not valid " });

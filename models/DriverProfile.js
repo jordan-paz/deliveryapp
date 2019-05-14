@@ -17,10 +17,20 @@ const DriverProfileSchema = new Schema({
     type: String,
     require: true
   },
-  inventory: {
-    type: Schema.Types.ObjectId,
-    ref: "driverInventory"
-  },
+  inventory: [
+    {
+      productId: {
+        type: Schema.Types.ObjectId,
+        require: true,
+        ref: "product"
+      },
+      quantity: {
+        type: Number,
+        default: 0,
+        required: true
+      }
+    }
+  ],
   activeOrders: [
     {
       type: Schema.Types.ObjectId,
