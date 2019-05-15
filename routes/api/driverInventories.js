@@ -8,14 +8,14 @@ const requireRole = require("../../middleware/requireRole");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
 // @route         PUT api/driverInventories/addProduct
-// @description   Add to driver inventory
+// @description   Add item to driver inventory
 // @access        Driver only
 router.put(
   "/addProduct",
   [
     requireRole("driver"),
     [
-      check("items", "No items selected")
+      check("item", "No item selected")
         .not()
         .isEmpty()
     ]
@@ -40,40 +40,28 @@ router.put(
       }
 
       let inventory = profile.inventory;
+      const { item } = req.body;
+      if (isValidObjectId(item.productId)) {
+        const product = await Product.findById(item.productId);
 
-      const hasValidObjectId = item => {
-        return isValidObjectId(item.productId);
-      };
-
-      let validItems = req.body.items.filter(hasValidObjectId);
-
-
-      // Filter out all items whose ids dont match a product
-      let validProducts = await validItems.map(item => {
-        const product = Product.findById(item.productId);
-        if (product) return product;
-        console.log("invalid");
-        invalidIds.push(id);
-      });
-
-      if (validProducts) {
-        const inventoryIds = inventory.forEach(item => item.productId);
-
-        // For each product, if the product already exists in driver inventory then add the quantity to existing product.
-        validProducts.forEach(item => {
-          if (inventoryIds.contains(item.productId)) {
+        if (product) {
+          // Get all ids of products that are in driver inventory
+          const inventoryIds = inventory.map(product =>
+            product.productId.toString()
+          );
+          productId = product._id.toString();
+          if (inventoryIds.includes(productId)) {
+            const index = inventoryIds.indexOf(productId);
             inventory[index].quantity += item.quantity;
           } else {
             inventory.push(item);
           }
-        });
-
-        profile.inventory = inventory;
-        await profile.save();
-        return res.json(profile);
+          await profile.save();
+          return res.json(profile);
+        }
       }
       return res.json({
-        msg: "Could not find products with ids: " + invalidIds
+        msg: "Could not find product"
       });
     } catch (err) {
       return res.status(400).json({ msg: "Server error" });
