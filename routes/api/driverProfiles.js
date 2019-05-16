@@ -5,8 +5,9 @@ const config = require("config");
 const DriverProfile = require("../../models/DriverProfile");
 const requireLogin = require("../../middleware/requireLogin");
 const requireRole = require("../../middleware/requireRole");
+const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
-// @route         POST api/driverprofile
+// @route         POST api/driverprofiles
 // @description   Create a driverprofile
 // @access        Private, Driver only
 router.post("/", requireLogin, async (req, res) => {
@@ -50,7 +51,7 @@ router.post("/", requireLogin, async (req, res) => {
   }
 });
 
-// @route         GET api/driverProfile
+// @route         GET api/driverProfiles
 // @description   Get all driver profiles
 // @access        Public
 router.get("/", [requireLogin, requireRole("driver")], async (req, res) => {
@@ -67,34 +68,169 @@ router.get("/", [requireLogin, requireRole("driver")], async (req, res) => {
   }
 });
 
-// @route         GET api/driverProfile/:user_id
-// @description   Get driver by user id
+// @route         GET api/driverProfiles/:user_id
+// @description   Get driver profile by user id
 // @access        Private, Driver only
-router.get(
-  "/:user_id",
-  [requireLogin, requireRole("driver")],
-  async (req, res) => {
-    try {
-      const profile = await DriverProfile.findOne({
-        user: req.params.user_id
-      }).populate("user", ["name", "avatar"]);
+router.get("/:user_id", requireRole("driver"), async (req, res) => {
+  try {
+    const profile = await DriverProfile.findOne({
+      user: req.params.user_id
+    }).populate("user", ["name", "avatar"]);
 
-      if (!profile) return res.status(400).json({ msg: "Profile not found " });
-      res.json(profile);
-    } catch (err) {
-      console.error(err.message);
-      if (err.kind === "ObjectId") {
-        return res.status(400).json({ msg: "Profile not found" });
+    if (!profile) return res.status(400).json({ msg: "Profile not found " });
+    res.json(profile);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === "ObjectId") {
+      return res.status(400).json({ msg: "Profile not found" });
+    }
+    res.status(500).send("Server error");
+  }
+});
+
+// @route         PUT api/driverProfiles/addProducts
+// @description   Add products to driver inventory
+// @access        Driver only
+router.put(
+  "/addProducts",
+  [
+    requireRole("driver"),
+    [
+      check("items", "No item selected")
+        .not()
+        .isEmpty()
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      // See if user has a driver profile
+      const profile = await DriverProfile.findOne({
+        user: req.user.id
+      }).populate("user", "name");
+
+      // If no profile, then return error
+      if (!profile) {
+        return res
+          .status(400)
+          .json({ msg: "User does not have a driver profile" });
       }
-      res.status(500).send("Server error");
+
+      let inventory = profile.inventory;
+      // Get all ids of products that are in driver inventory
+      const inventoryIds = inventory.map(product =>
+        product.productId.toString()
+      );
+      const { items } = req.body;
+
+      const invalidItems = items.filter(
+        item => !isValidObjectId(item.productId)
+      );
+      const validItems = items.filter(item => isValidObjectId(item.productId));
+
+      const isProduct = async item => {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          return true;
+        }
+        return false;
+      };
+
+      if (validItems) {
+        const validProducts = validItems.filter(isProduct);
+        validProducts.forEach(product => {
+          let productId = product.productId.toString();
+
+          if (inventoryIds.includes(productId)) {
+            const index = inventoryIds.indexOf(productId);
+            inventory[index].quantity += product.quantity;
+          } else {
+            inventory.push(product);
+          }
+        });
+      }
+      if (invalidItems.length > 0) {
+        await profile.save();
+        return res.json({
+          msg: "Could not find products",
+          invalidItems,
+          profile
+        });
+      }
+      await profile.save();
+      return res.json(profile);
+    } catch (err) {
+      return res.status(400).json({ msg: "Server error" });
     }
   }
 );
 
-// @route         PUT api/driverProfile
-// @description   Edit driver
+// @route         PUT api/driverProfiles/removeProducts
+// @description   Remove products from driver inventory
+// @access        Driver only
+router.put(
+  "/removeProducts",
+  [
+    requireRole("driver"),
+    [
+      check("items", "No item selected")
+        .not()
+        .isEmpty()
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      // See if user has a driver profile
+      const profile = await DriverProfile.findOne({
+        user: req.user.id
+      }).populate("user", "name");
+
+      // If no profile, then return error
+      if (!profile) {
+        return res
+          .status(400)
+          .json({ msg: "User does not have a driver profile" });
+      }
+
+      let inventory = profile.inventory;
+      // Get all ids of products that are in driver inventory
+      const getIds = inventory => {
+        return inventory.map(i => i.productId.toString());
+      };
+
+      const { items } = req.body;
+      items.forEach(item => {
+        let productId = item.productId.toString();
+        let inventoryIds = getIds(inventory);
+        if (inventoryIds.includes(productId)) {
+          let index = inventoryIds.indexOf(productId);
+          inventory[index].quantity -= item.quantity;
+          if (inventory[index].quantity <= 0) {
+            inventory.splice(index, 1);
+          }
+        }
+      });
+      await profile.save();
+      return res.json(profile);
+    } catch (err) {
+      return res.status(400).json({ msg: "Server error" });
+    }
+  }
+);
+
+// @route         PUT api/driverProfiles
+// @description   Edit driver profile
 // @access        Private, Driver only
-router.put("/", [requireLogin, requireRole("driver")], async (req, res) => {
+router.put("/", requireRole("driver"), async (req, res) => {
   try {
   } catch (err) {}
 });
