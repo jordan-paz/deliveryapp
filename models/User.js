@@ -23,6 +23,18 @@ const UserSchema = new Schema({
     type: Date,
     default: Date.now
   },
+  cart: [
+    {
+      productID: {
+        type: Schema.Types.ObjectId,
+        ref: "product"
+      },
+      quantity: {
+        type: Number,
+        default: 1
+      }
+    }
+  ],
   role: {
     type: String,
     default: "customer"

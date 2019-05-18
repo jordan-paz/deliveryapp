@@ -14,6 +14,18 @@ const CustomerProfileSchema = new Schema({
     type: Number,
     required: true
   },
+  cart: [
+    {
+      productID: {
+        type: Schema.Types.ObjectId,
+        ref: "product"
+      },
+      quantity: {
+        type: Number,
+        default: 1
+      }
+    }
+  ],
   currentOrder: {
     type: Schema.Types.ObjectId,
     ref: "order"

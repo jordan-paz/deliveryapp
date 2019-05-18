@@ -6,7 +6,7 @@ const OrderSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "user"
   },
-  orderDetails: [
+  products: [
     {
       productID: {
         type: Schema.Types.ObjectId,
@@ -29,7 +29,6 @@ const OrderSchema = new Schema({
   },
   orderStatus: {
     type: String,
-    default: "Order sent",
     required: true
   },
   notes: {

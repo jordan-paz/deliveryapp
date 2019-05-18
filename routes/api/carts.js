@@ -2,69 +2,66 @@ const express = require("express");
 const router = express.Router();
 const { check, validationResult } = require("express-validator/check");
 const Product = require("../../models/Product");
-const Cart = require("../../models/Cart");
+const User = require("../../models/User");
 const requireLogin = require("../../middleware/requireLogin");
 const requireRole = require("../../middleware/requireRole");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
-const removeItemFromCart = async (cart, productID, quantityToRemove, res) => {
-  if (!isValidObjectId(productID)) {
-    return res.status(400).json({ msg: "Invalid Product Id" });
-  }
-
-  const product = await Product.findById(productID);
-  if (!product) {
-    return res.status(400).json({ msg: "Product not found" });
-  }
-
-  const itemIndex = cart.items
-    .map(item => item.productID.toString())
-    .indexOf(productID);
-  if (itemIndex === -1) {
-    return res.status(400).json({ msg: "Item is not in cart" });
-  }
-  if (cart.items[itemIndex].quantity <= quantityToRemove) {
-    cart.items.splice(itemIndex, 1);
-  } else {
-    cart.items[itemIndex].quantity -= quantityToRemove;
-  }
-  await cart.save();
-  res.json(cart);
+const productIsInCart = (cart, productId) => {
+  return cart.some(product => product.productId === productId);
 };
 
-const addItemToCart = async (cart, productID, quantity, res) => {
-  if (!isValidObjectId(productID)) {
+const getProductIndex = (cart, productId) => {
+  const index = cart
+    .map(product => product.productId.toString())
+    .indexOf(productId);
+  if (index === -1) {
+    return res.status(400).json({ msg: "Item is not in cart" });
+  }
+  return index;
+};
+
+const removeItemFromCart = (cart, productId, quantityToRemove) => {
+  if (!isValidObjectId(productId)) {
+    return res.status(400).json({ msg: "Invalid Product Id" });
+  }
+  const itemIndex = getProductIndex(cart, productId);
+  if (cart.products[itemIndex].quantity <= quantityToRemove) {
+    cart.products.splice(itemIndex, 1);
+  } else {
+    cart.products[itemIndex].quantity -= quantityToRemove;
+  }
+};
+
+const addItemToCart = async (cart, productId, quantity, res) => {
+  if (!isValidObjectId(productId)) {
     return res.status(400).json({ msg: "Invalid Product Id" });
   }
 
-  const product = await Product.findById(productID);
+  const product = await Product.findById(productId);
   if (!product) {
     return res.status(400).json({ msg: "Product not found" });
   }
 
-  const itemIndex = cart.items
-    .map(item => item.productID.toString())
-    .indexOf(productID);
-  console.log("index: " + itemIndex);
-  console.log("cart items: " + cart.items);
-  if (cart.items && itemIndex !== -1) {
-    cart.items[itemIndex].quantity += quantity;
+  const productIsInCart = productIsInCart(cart, productId);
+
+  if (productIsInCart) {
+    const itemIndex = getProductIndex(cart, products);
+    cart.products[itemIndex].quantity += quantity;
   } else {
-    cart.items.unshift({ productID, quantity });
+    cart.products.unshift({ productId, quantity });
   }
-  await cart.save();
-  res.json(cart);
 };
 
 // @route         POST api/carts/
-// @description   Create a cart
+// @description   Create a cart/ add item to cart
 // @access        Users
 router.post(
   "/",
   [
     requireLogin,
     [
-      check("productID", "Please choose a product")
+      check("productId", "Please choose a product")
         .not()
         .isEmpty()
     ]
@@ -74,24 +71,20 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    // Get quantity and productID from client
-    const { quantity, productID } = req.body;
+    // Get quantity and productId from client
+    const { quantity, productId } = req.body;
 
     try {
       // See if user has a cart
-      let cart = await Cart.findOne({ user: req.user.id });
-      if (cart) {
-        return res.status(400).json({ msg: "User already has a cart" });
+      let user = await User.findOne({ _id: req.user.id });
+      let cart = user.cart;
+      if (!cart) {
+        // User doesn't have a cart, so make a new cart for user
+        user.cart = [];
       }
-      // User doesn't have a cart, so make a new cart for user
-      cart = new Cart({
-        user: req.user.id
-      });
-
-      addItemToCart(cart, productID, quantity);
-
-      await cart.save();
-      res.json(cart);
+      addItemToCart(user.cart, productId, quantity);
+      await user.save();
+      res.json(user.cart);
     } catch (err) {
       console.error(err.message);
       if (err.kind === "ObjectID") {
@@ -144,10 +137,11 @@ router.get(
 // @access        User
 router.get("/me", requireLogin, async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id });
+    const user = await User.findOne({ _id: req.user.id });
+    const cart = user.cart;
     // If user has a cart, return it
     if (!cart) {
-      return res.status(400).json({ msg: "no cart found for this user" });
+      return res.status(400).json({ msg: "No cart found for this user" });
     }
     return res.json(cart);
   } catch (err) {
@@ -155,45 +149,36 @@ router.get("/me", requireLogin, async (req, res) => {
   }
 });
 
-// @route         PUT api/carts
-// @description   Edit current user's cart
+// @route         PUT api/carts/removeItem/:productId/:quantity?
+// @description   remove item from cart
 // @access        Users
 router.put(
-  "/",
-  [
-    requireLogin,
-    check("changes", "No changes submitted")
-      .not()
-      .isEmpty()
-  ],
+  "/removeItem/:productId/:quantity?",
+  requireLogin,
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
-    const { itemsToRemove, itemsToAdd } = req.body.changes;
+    const { productId } = req.params;
+    const quantity = req.params.quantity || 1;
 
     try {
+      const user = User.findById(req.user.id);
+      const cart = user.cart;
+      if (cart) {
+        const inCart = productIsInCart(cart, productId);
+        if (inCart) {
+          removeItemFromCart(cart, productId, quantity);
+          user.save();
+          return res.json(user.cart);
+        } else {
+          return res.status(400).json({ msg: "Item not in cart" });
+        }
+      }
+      return res.status(400).json({ msg: "No cart for this user" });
     } catch (err) {
       return res.status(500).send("Server Error");
-    }
-    const cart = await Cart.findOne({ user: req.user.id });
-
-    if (!cart) {
-      return res.status(400).json({ msg: "User does not have a cart" });
-    }
-
-    if (itemsToRemove) {
-      itemsToRemove.forEach(item =>
-        removeItemFromCart(cart, item.productID, item.quantity, res)
-      );
-    }
-
-    if (itemsToAdd) {
-      itemsToAdd.forEach(item =>
-        addItemToCart(cart, item.productID, item.quantity, res)
-      );
     }
   }
 );
@@ -203,17 +188,17 @@ router.put(
 // @access        Users
 router.delete("/", requireLogin, async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.user.id });
+    const user = await User.findOne({ _id: req.user.id });
+    const cart = user.cart;
     if (!cart) {
       return res.status(400).json({ msg: "No cart found for this user" });
     }
-    await cart.remove();
+    user.cart = [];
+    await user.save();
     res.json({ msg: "Cart removed" });
   } catch (err) {
     console.error(err.message);
-    if (err.kind === "ObjectId") {
-      return res.status(404).json({ msg: "Cart not found" });
-    }
+    return res.status(500).send("Server Error");
   }
 });
 

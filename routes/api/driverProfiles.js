@@ -9,13 +9,12 @@ const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
 // @route         POST api/driverprofiles
 // @description   Create a driverprofile
-// @access        Private, Driver only
+// @access        Private
 router.post("/", requireLogin, async (req, res) => {
   const { inventory, currentOrder, pastOrders, driverStatus } = req.body;
 
   // Build profile object
-  const profileFields = {};
-  profileFields.user = req.user.id;
+  const profileFields = { user: req.user.id };
   if (inventory) {
     profileFields.inventory = inventory;
   } else {
@@ -227,13 +226,31 @@ router.put(
   }
 );
 
-// @route         PUT api/driverProfiles
-// @description   Edit driver profile
+// @route         PUT api/driverProfiles/orders/acceptOrder
+// @description   Add order to driver profile
 // @access        Private, Driver only
-router.put("/", requireRole("driver"), async (req, res) => {
-  try {
-  } catch (err) {}
-});
+router.put(
+  "/orders/acceptOrder/:order_id",
+  requireRole("driver"),
+  async (req, res) => {
+    try {
+      const driver = await DriverProfile.findOne({ user: req.user.id });
+      const order = await Order.findById(req.params.order_id);
+      let activeOrders = driver.activeOrders;
+
+      if (order) {
+        order.assignedDriver = req.user.id;
+        activeOrders.push(req.params.order_id);
+        await order.save();
+        await driver.save();
+        return res.json(driver);
+      }
+      return res.status(400).json({ msg: "Order not found" });
+    } catch (err) {
+      return res.status(400).json({ msg: "Server error" });
+    }
+  }
+);
 
 // @route         DELETE api/driverProfile
 // @description   Delete driver profile and user associated
