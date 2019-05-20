@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const config = require("config");
 
-module.exports = role => async (req, res, next) => {
+module.exports = async function(req, res, next) {
   const token = req.header("x-auth-token");
   // Check if not token
   if (!token) {
@@ -12,9 +12,9 @@ module.exports = role => async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, config.get("jwtSecret"));
     const userId = decoded.user.id;
-    const user = await User.findOne({ _id: userId });
 
-    if (user && user.role === role) {
+    const user = await User.findOne({ _id: userId });
+    if (user && user.role === "driver") {
       req.user = decoded.user;
       next();
     } else {

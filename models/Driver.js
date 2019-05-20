@@ -1,21 +1,17 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const DriverProfileSchema = new Schema({
+const DriverSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
     ref: "user"
-  },
-  driverStatus: {
-    type: String
   },
   date: {
     type: Date,
     default: Date.now
   },
-  phoneNumber: {
-    type: String,
-    require: true
+  driverStatus: {
+    type: String
   },
   inventory: [
     {
@@ -31,13 +27,13 @@ const DriverProfileSchema = new Schema({
       }
     }
   ],
-  activeOrders: [
+  currentOrders: [
     {
       type: Schema.Types.ObjectId,
       ref: "order"
     }
   ],
-  pastOrders: [
+  completedOrders: [
     {
       type: Schema.Types.ObjectId,
       ref: "order"
@@ -45,7 +41,4 @@ const DriverProfileSchema = new Schema({
   ]
 });
 
-module.exports = DriverProfile = mongoose.model(
-  "driverProfile",
-  DriverProfileSchema
-);
+module.exports = Driver = mongoose.model("driverProfile", DriverSchema);

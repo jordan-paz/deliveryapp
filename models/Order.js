@@ -15,20 +15,25 @@ const OrderSchema = new Schema({
       },
       quantity: {
         type: Number,
+        default: 1,
         required: true
       }
     }
   ],
   total: {
-    type: Number,
-    required: true
+    type: Number
   },
-  assignedDriver: {
+  driver: {
     type: Schema.Types.ObjectId,
     ref: "user"
   },
-  orderStatus: {
+  active: {
+    type: Boolean,
+    required: true
+  },
+  status: {
     type: String,
+    default: "sent",
     required: true
   },
   notes: {

@@ -11,13 +11,11 @@ connectDB();
 app.use(express.json({ extended: false }));
 
 // Define routes
-app.use("/api/auth", require("./routes/api/auth"));
-app.use("/api/users", require("./routes/api/users"));
-app.use("/api/products", require("./routes/api/products"));
-app.use("/api/orders", require("./routes/api/orders"));
-app.use("/api/customerProfiles", require("./routes/api/customerProfiles"));
-app.use("/api/driverProfiles", require("./routes/api/driverProfiles"));
-app.use("/api/carts", require("./routes/api/carts"));
+app.use("/auth", require("./routes/auth"));
+app.use("/users", require("./routes/users"));
+app.use("/products", require("./routes/products"));
+app.use("/orders", require("./routes/orders"));
+app.use("/drivers", require("./routes/drivers"));
 
 app.get("/", (req, res) => res.send("API Running"));
 
