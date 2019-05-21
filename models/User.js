@@ -44,7 +44,13 @@ const UserSchema = new Schema({
   currentOrder: {
     type: Schema.Types.ObjectId,
     ref: "order"
-  }
+  },
+  pastOrders: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "order"
+    }
+  ]
 });
 
-module.exports = User = mongoose.model("user", UserSchema);
+module.exports = User = mongoose.model("User", UserSchema);

@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const OrderSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: "user"
+    ref: "User"
   },
   products: [
     {
@@ -25,7 +25,7 @@ const OrderSchema = new Schema({
   },
   driver: {
     type: Schema.Types.ObjectId,
-    ref: "user"
+    ref: "User"
   },
   active: {
     type: Boolean,
