@@ -6,12 +6,12 @@ const OrderSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
-  products: [
+  productList: [
     {
-      productID: {
+      product: {
         type: Schema.Types.ObjectId,
         require: true,
-        ref: "product"
+        ref: "Product"
       },
       quantity: {
         type: Number,
@@ -25,7 +25,7 @@ const OrderSchema = new Schema({
   },
   driver: {
     type: Schema.Types.ObjectId,
-    ref: "User"
+    ref: "Driver"
   },
   active: {
     type: Boolean,
@@ -38,6 +38,10 @@ const OrderSchema = new Schema({
   },
   notes: {
     type: String
+  },
+  date: {
+    type: Date,
+    default: Date.now
   }
 });
 

@@ -17,10 +17,7 @@ router.post("/", requireLogin, async (req, res) => {
     if (driver) {
       return res.status(400).json("Driver already exists");
     }
-
-    // Create
     driver = await new Driver({ user: req.user.id });
-
     await User.findOneAndUpdate({ _id: req.user.id }, { role: "driver" });
     await driver.save();
     res.json(driver);

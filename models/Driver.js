@@ -41,4 +41,4 @@ const DriverSchema = new Schema({
   ]
 });
 
-module.exports = Driver = mongoose.model("driverProfile", DriverSchema);
+module.exports = Driver = mongoose.model("Driver", DriverSchema);
