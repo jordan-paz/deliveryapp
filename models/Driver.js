@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const DriverSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: "user"
+    ref: "User"
   },
   date: {
     type: Date,
@@ -27,13 +27,7 @@ const DriverSchema = new Schema({
       }
     }
   ],
-  currentOrders: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "order"
-    }
-  ],
-  completedOrders: [
+  orders: [
     {
       type: Schema.Types.ObjectId,
       ref: "order"

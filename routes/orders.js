@@ -1,11 +1,8 @@
 const express = require("express");
 const router = express.Router();
-var ObjectId = require("mongoose").Types.ObjectId;
 const { check, validationResult } = require("express-validator/check");
-const config = require("config");
 const Order = require("../models/Order");
 const Driver = require("../models/Driver");
-const Product = require("../models/Product");
 const requireLogin = require("../middleware/requireLogin");
 const requireDriver = require("../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
@@ -223,13 +220,13 @@ router.put("/acceptOrder/:orderId", requireDriver, async (req, res) => {
     const { orderId } = req.params;
     const driver = await Driver.findOne({ user: req.user.id });
     const order = await Order.findById(orderId);
-    console.log(order);
     if (order.driver) {
       return res.status(400).json({ msg: "Order is already assigned" });
     }
     if (order && driver) {
       order.driver = req.user.id;
-      driver.currentOrders.push(orderId);
+      order.status = "received";
+      driver.orders.push(orderId);
       await order.save();
       await driver.save();
       return res.json(driver);
@@ -240,10 +237,6 @@ router.put("/acceptOrder/:orderId", requireDriver, async (req, res) => {
     return res.status(400).json({ msg: "Server error" });
   }
 });
-
-// @route         PUT /orders/:status
-// @description   Change status of order (accepted, en-route, arrived, completed)
-// @access        Private, Driver only
 
 // @route         DELETE /orders
 // @description   Cancel logged in user's current order

@@ -27,16 +27,18 @@ router.post("/", requireLogin, async (req, res) => {
   }
 });
 
-// @route         GET api/drivers
+// @route         GET /drivers
 // @description   Get all drivers
 // @access        Driver only
 router.get("/", requireDriver, async (req, res) => {
   try {
-    const drivers = await Driver.find().populate("user", [
-      "name",
-      "phoneNumber",
-      "avatar"
-    ]);
+    // Only populate the orders that are active
+    const drivers = await Driver.find()
+      .populate("user", ["name", "phoneNumber"])
+      .populate({
+        path: "orders",
+        match: { active: true }
+      });
     res.json(drivers);
   } catch (err) {
     console.error(err.message);
