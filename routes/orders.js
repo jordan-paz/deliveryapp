@@ -212,32 +212,6 @@ router.put("/", requireLogin, async (req, res) => {
   }
 });
 
-// @route         PUT /orders/acceptOrder
-// @description   Asign order to driver, and driver to order
-// @access        Private, Driver only
-router.put("/acceptOrder/:orderId", requireDriver, async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const driver = await Driver.findOne({ user: req.user.id });
-    const order = await Order.findById(orderId);
-    if (order.driver) {
-      return res.status(400).json({ msg: "Order is already assigned" });
-    }
-    if (order && driver) {
-      order.driver = req.user.id;
-      order.status = "received";
-      driver.orders.push(orderId);
-      await order.save();
-      await driver.save();
-      return res.json(driver);
-    }
-    if (!order) res.status(400).json({ msg: "Order not found" });
-    if (!driver) res.status(400).json({ msg: "Driver not found" });
-  } catch (err) {
-    return res.status(400).json({ msg: "Server error" });
-  }
-});
-
 // @route         DELETE /orders
 // @description   Cancel logged in user's current order
 // @access        Users
