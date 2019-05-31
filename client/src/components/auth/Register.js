@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,10 +14,19 @@ const Register = () => {
   const onChange = e =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const onSubmit = async e => {
+    e.preventDefault();
+    if (password !== password2) {
+      console.log("Passwords do not match");
+    } else {
+      console.log("success");
+    }
+  };
+
   return (
     <div>
       <h1>Register</h1>
-      <form>
+      <form onSubmit={onSubmit}>
         <input
           type="text"
           placeholder="name"
@@ -49,7 +59,11 @@ const Register = () => {
           onChange={e => onChange(e)}
           required
         />
+        <input type="submit" className="btn btn-primary" value="Register" />
       </form>
+      <p className="my-1">
+        Already have an account? <Link to="/login">Log In</Link>
+      </p>
     </div>
   );
 };
