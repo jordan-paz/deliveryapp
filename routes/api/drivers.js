@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const { check, validationResult } = require("express-validator/check");
-const Driver = require("../models/Driver");
-const User = require("../models/Driver");
-const requireLogin = require("../middleware/requireLogin");
-const requireDriver = require("../middleware/requireDriver");
+const Driver = require("../../models/Driver");
+const User = require("../../models/Driver");
+const requireLogin = require("../../middleware/requireLogin");
+const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
 const isProduct = async item => {

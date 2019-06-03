@@ -3,9 +3,9 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator/check");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const requireLogin = require("../middleware/requireLogin");
-const requireDriver = require("../middleware/requireDriver");
+const User = require("../../models/User");
+const requireLogin = require("../../middleware/requireLogin");
+const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 const config = require("config");
 
@@ -34,7 +34,9 @@ router.post(
         // See if user exists
         let user = await User.findOne({ email });
         if (user) {
-          res.status(400).json({ msg: "User already exists" });
+          return res
+            .status(400)
+            .json({ errors: [{ msg: "User already exists" }] });
         }
 
         // Create user

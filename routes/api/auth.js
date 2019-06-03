@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const requireLogin = require("../middleware/requireLogin");
-const User = require("../models/User");
+const requireLogin = require("../../middleware/requireLogin");
+const User = require("../../models/User");
 const config = require("config");
 const { check, validationResult } = require("express-validator/check");
 
