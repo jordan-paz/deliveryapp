@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { setAlert } from "../../actions/alert";
 import { register } from "../../actions/auth";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
-const Register = ({ setAlert, register }) => {
+const Register = ({ setAlert, register, isAuthenticated }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,6 +27,10 @@ const Register = ({ setAlert, register }) => {
     }
   };
 
+  if (isAuthenticated) {
+    return <Redirect to="/dashboard" />;
+  }
+
   return (
     <div>
       <h1>Register</h1>
@@ -37,7 +41,6 @@ const Register = ({ setAlert, register }) => {
           name="name"
           value={name}
           onChange={e => onChange(e)}
-          required
         />
         <input
           type="email"
@@ -45,7 +48,6 @@ const Register = ({ setAlert, register }) => {
           name="email"
           value={email}
           onChange={e => onChange(e)}
-          required
         />
         <input
           type="text"
@@ -53,7 +55,6 @@ const Register = ({ setAlert, register }) => {
           name="password"
           value={password}
           onChange={e => onChange(e)}
-          required
         />
         <input
           type="text"
@@ -61,7 +62,6 @@ const Register = ({ setAlert, register }) => {
           name="password2"
           value={password2}
           onChange={e => onChange(e)}
-          required
         />
         <input type="submit" className="btn btn-primary" value="Register" />
       </form>
@@ -74,10 +74,15 @@ const Register = ({ setAlert, register }) => {
 
 Register.propTypes = {
   setAlert: PropTypes.func.isRequired,
-  register: PropTypes.func.isRequired
+  register: PropTypes.func.isRequired,
+  isAuthenticated: PropTypes.bool
 };
 
+const mapStateToProps = state => ({
+  isAuthenticated: state.auth.isAuthenticated
+});
+
 export default connect(
-  null,
+  mapStateToProps,
   { setAlert, register }
 )(Register);
