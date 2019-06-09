@@ -13,6 +13,10 @@ const DriverSchema = new Schema({
   driverStatus: {
     type: String
   },
+  phoneNumber: {
+    type: String,
+    required: true
+  },
   inventory: [
     {
       productId: {

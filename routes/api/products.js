@@ -41,12 +41,13 @@ router.post(
           .json({ msg: "Product with that name already exists" });
       }
 
-      // if it doesn't exist, then create product
+      const { name, price, description, imageURLs } = req.body;
+
       product = await new Product({
-        name: req.body.name,
-        price: req.body.price,
-        description: req.body.description,
-        imageUrls: req.body.imageURLs
+        name,
+        price,
+        description,
+        imageURLs
       });
 
       await product.save();

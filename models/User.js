@@ -15,41 +15,14 @@ const UserSchema = new Schema({
     type: String,
     required: true
   },
-  avatar: {
-    type: String
-  },
   date: {
     type: Date,
     default: Date.now
   },
-  profile: {
-    address: {
-      type: String
-    },
-    phoneNumber: {
-      type: String
-    },
-    age: {
-      type: Number
-    },
-    points: {
-      type: Number
-    }
-  },
   role: {
     type: String,
     default: "customer"
-  },
-  currentOrder: {
-    type: Schema.Types.ObjectId,
-    ref: "order"
-  },
-  pastOrders: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "order"
-    }
-  ]
+  }
 });
 
 module.exports = User = mongoose.model("User", UserSchema);
