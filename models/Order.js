@@ -25,7 +25,7 @@ const OrderSchema = new Schema({
   },
   driver: {
     type: Schema.Types.ObjectId,
-    ref: "Driver"
+    ref: "User"
   },
   active: {
     type: Boolean,

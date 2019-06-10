@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const { check, validationResult } = require("express-validator/check");
 const Order = require("../../models/Order");
-const Driver = require("../../models/Driver");
 const requireLogin = require("../../middleware/requireLogin");
 const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
@@ -59,7 +58,7 @@ router.post(
 router.get("/", requireDriver, async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("user", ["name", "profile", "points"])
+      .populate("user", ["name"])
       .populate("productList.product");
     res.json(orders);
   } catch (err) {
@@ -73,9 +72,9 @@ router.get("/", requireDriver, async (req, res) => {
 // @access        Users
 router.get("/me", requireLogin, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.id })
-      .populate("user", ["name", "profile", "points"])
-      .populate("productList.product");
+    const orders = await Order.find({ user: req.user.id }).populate(
+      "productList.product"
+    );
     if (!orders) {
       return res.status(400).send("No orders found");
     }
@@ -113,7 +112,7 @@ router.get("/:orderId", requireDriver, async (req, res) => {
   }
   try {
     const order = await Order.findById(orderId)
-      .populate("user", ["name", "profile", "points"])
+      .populate("user", ["name"])
       .populate("productList.product");
 
     if (!order) {
@@ -127,7 +126,7 @@ router.get("/:orderId", requireDriver, async (req, res) => {
 });
 
 // @route         GET /orders/users/:userId
-// @description   Get all orders (past and present) made by a user
+// @description   Get all orders made by a user
 // @access        Driver Only
 router.get("/users/:userId", requireDriver, async (req, res) => {
   const { userId } = req.params;
@@ -135,9 +134,9 @@ router.get("/users/:userId", requireDriver, async (req, res) => {
     return res.status(400).json({ msg: "Invalid user ID" });
   }
   try {
-    const orders = await Order.find({ user: userId })
-      .populate("user", ["name", "profile", "points"])
-      .populate("productList.product");
+    const orders = await Order.find({ user: userId }).populate(
+      "productList.product"
+    );
     if (!orders) {
       return res.status(400).json({ msg: "No orders found for this user" });
     }
@@ -148,14 +147,15 @@ router.get("/users/:userId", requireDriver, async (req, res) => {
   }
 });
 
-// @route         GET /orders/activeOrders/users/me
+// @route         GET /orders/activeOrders/me
 // @description   Get logged in user's active order
 // @access        Users
 router.get("/activeOrders/me", requireLogin, async (req, res) => {
   try {
-    const order = await Order.findOne({ user: req.user.id, active: true })
-      .populate("user", ["name", "profile", "points"])
-      .populate("productList.product");
+    const order = await Order.findOne({
+      user: req.user.id,
+      active: true
+    }).populate("productList.product");
     if (!order) {
       return res.status(400).send("No order found");
     }
@@ -166,14 +166,15 @@ router.get("/activeOrders/me", requireLogin, async (req, res) => {
   }
 });
 
-// @route         GET /orders/activeOrders/drivers/me
+// @route         GET /drivers/orders/active
 // @description   Get all active orders assigned to driver logged in
 // @access        Drivers only
-router.get("/activeOrders/drivers/me", requireDriver, async (req, res) => {
+router.get("/orders/active", requireDriver, async (req, res) => {
   try {
-    const order = await Order.find({ driver: req.user.id, active: true })
-      .populate("user", ["name", "profile", "points"])
-      .populate("productList.product");
+    const order = await Order.find({
+      driver: req.user.id,
+      active: true
+    }).populate("productList.product");
     if (!order) {
       return res.status(400).send("No order found");
     }
@@ -181,6 +182,88 @@ router.get("/activeOrders/drivers/me", requireDriver, async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(400).send("Server error");
+  }
+});
+
+// @route         PUT /acceptOrder/:orderId
+// @description   Asign driver to order
+// @access        Private, Driver only
+router.put("/acceptOrder/:orderId", requireDriver, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    if (!isValidObjectId(orderId)) {
+      return res.status(400).json({ msg: "Invalid order ID" });
+    }
+    const order = await Order.findById(orderId);
+    if (!order) res.status(400).json({ msg: "Order not found" });
+    if (order.driver) {
+      return res.status(400).json({ msg: "Order is already assigned" });
+    }
+    order.driver = req.user.id;
+    order.status = "received";
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ msg: "Server error" });
+  }
+});
+
+// @route         PUT /orders/enroute/:orderId
+// @description   Change status of order to en route
+// @access        Private, Driver only
+router.put("/enroute/:orderId", requireDriver, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) res.status(400).json({ msg: "Order not found" });
+    if (order.driver == req.user.id) {
+      order.status = "En route";
+    }
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ msg: "Server error" });
+  }
+});
+
+// @route         PUT /arrived/:orderId
+// @description   Change status of order to arrived
+// @access        Private, Driver only
+router.put("/arrived/:orderId", requireDriver, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(400).json({ msg: "Order not found" });
+    if (order.driver == req.user.id) {
+      order.status = "arrived";
+    }
+    order.save();
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ msg: "Server error" });
+  }
+});
+
+// @route         PUT /completed/:orderId
+// @description   Change status of order to completed
+// @access        Private, Driver only
+router.put("/completed/:orderId", requireDriver, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findById(orderId);
+    if (!order) res.status(400).json({ msg: "Order not found" });
+    if (order.driver == req.user.id) {
+      order.status = "completed";
+      order.active = false;
+    }
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    console.error(err);
+    return res.status(400).json({ msg: "Server error" });
   }
 });
 
@@ -196,15 +279,11 @@ router.put("/", requireLogin, async (req, res) => {
     if (!order) {
       return res.status(400).send("No order found");
     }
-
     const { productList } = req.body;
     const notes = req.body.notes || "";
-
     order.productList = productList;
     order.notes = notes;
-
     await order.save();
-
     res.json(order);
   } catch (err) {
     console.log(err);
@@ -218,9 +297,6 @@ router.put("/", requireLogin, async (req, res) => {
 router.delete("/", requireLogin, async (req, res) => {
   try {
     const order = await Order.findOne({ user: req.user.id, active: true });
-    if (!order) {
-      return res.status(400).send("No order found");
-    }
     await order.remove();
     res.json({ msg: "Order cancelled" });
   } catch (err) {

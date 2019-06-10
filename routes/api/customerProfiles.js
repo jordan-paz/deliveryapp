@@ -5,7 +5,6 @@ const CustomerProfile = require("../../models/CustomerProfile");
 const requireLogin = require("../../middleware/requireLogin");
 const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
-const config = require("config");
 
 // @route         POST api/customerProfiles
 // @description   Create a customer profile
@@ -56,8 +55,7 @@ router.get("/", requireDriver, async (req, res) => {
   try {
     const profiles = await CustomerProfile.find().populate("user", [
       "name",
-      "email",
-      "avatar"
+      "email"
     ]);
     return res.json(profiles);
   } catch (err) {
@@ -71,10 +69,9 @@ router.get("/", requireDriver, async (req, res) => {
 // @access        User
 router.get("/me", requireLogin, async (req, res) => {
   try {
-    const profile = await CustomerProfile.findById(req.user.id).populate(
-      "user",
-      ["name", "email", "avatar"]
-    );
+    const profile = await CustomerProfile.findOne({
+      user: req.user.id
+    }).populate("user", ["name", "email", "avatar"]);
     if (!profile) {
       return res.status(400).json({ msg: "No profile for user" });
     }
@@ -95,7 +92,7 @@ router.get("/:userId", requireDriver, async (req, res) => {
       return res.status(400).json({ msg: "Invalid user id" });
     }
     const profile = await CustomerProfile.findOne({
-      _id: userId
+      user: userId
     }).populate("user", ["name", "email", "avatar"]);
     if (!profile) {
       return res.status(400).json({ msg: "No profile for user" });
@@ -111,14 +108,13 @@ router.get("/:userId", requireDriver, async (req, res) => {
 // @description   Edit profile
 // @access        User
 router.put("/", requireLogin, async (req, res) => {
-  const { address, age, email, phoneNumber } = req.body;
-
+  const { address, age, phoneNumber } = req.body;
   try {
     await CustomerProfile.findOneAndUpdate(
       { user: req.user.id },
-      { $set: { address, age, email, phoneNumber } }
+      { $set: { address, age, phoneNumber } }
     );
-    res.json(profile);
+    res.json({ msg: "Profile updated" });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
@@ -130,12 +126,9 @@ router.put("/", requireLogin, async (req, res) => {
 // @access        Private
 router.delete("/", requireLogin, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(400).json({ msg: "No user found" });
-    }
-    await user.remove();
-    res.json({ msg: "User removed" });
+    await CustomerProfile.findOneAndRemove({ user: req.user.id });
+    await User.findOneAndRemove({ _id: req.user.id });
+    res.json({ msg: "Profile deleted" });
   } catch (err) {
     console.error(err.message);
     return res.status(500).json({ msg: "Server error" });

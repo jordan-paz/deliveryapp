@@ -22,17 +22,7 @@ const CustomerProfileSchema = new Schema({
     type: Number,
     required: true,
     default: 0
-  },
-  currentOrder: {
-    type: Schema.Types.ObjectId,
-    ref: "order"
-  },
-  pastOrders: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "order"
-    }
-  ]
+  }
 });
 
 module.exports = CustomerProfile = mongoose.model(
