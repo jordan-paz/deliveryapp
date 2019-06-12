@@ -17,6 +17,7 @@ app.use("/api/products", require("./routes/api/products"));
 app.use("/api/orders", require("./routes/api/orders"));
 app.use("/api/drivers", require("./routes/api/drivers"));
 app.use("/api/customerProfiles", require("./routes/api/customerProfiles"));
+app.use("/api/carts", require("./routes/api/carts"));
 
 app.get("/", (req, res) => res.send("API Running"));
 

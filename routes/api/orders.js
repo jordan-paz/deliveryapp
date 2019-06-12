@@ -1,56 +1,55 @@
 const express = require("express");
 const router = express.Router();
+
+// Middleware //
 const { check, validationResult } = require("express-validator/check");
-const Order = require("../../models/Order");
 const requireLogin = require("../../middleware/requireLogin");
 const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
 
+// Models //
+const Order = require("../../models/Order");
+const Cart = require("../../models/Cart");
+
 // @route         POST /orders
 // @description   Create order
 // @access        Users
-router.post(
-  "/",
-  [
-    requireLogin,
-    [
-      check("productList", "Please choose a product")
-        .not()
-        .isEmpty()
-    ]
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    // Get quantity and productId from client
-    const { productList } = req.body;
-    const notes = req.body.notes || "";
+router.post("/", requireLogin, async (req, res) => {
+  try {
+    // See if user has an active order
+    let order = await Order.findOne({ user: req.user.id, active: true });
 
-    try {
-      // See if user has an active order
-      let order = await Order.findOne({ user: req.user.id, active: true });
+    if (!order) {
+      const cart = await Cart.findOne({ user: req.user.id }).populate(
+        "products"
+      );
+      const profile = await CustomerProfile.findOne({ user: req.user.id });
 
-      if (!order) {
-        order = await new Order({
-          user: req.user.id,
-          productList,
-          active: true,
-          status: "sent",
-          notes: notes
-        });
-        await order.save();
-        res.json(order);
-      } else {
-        res.status(400).json({ msg: "You may only place one order at a time" });
-      }
-    } catch (err) {
-      console.error(err.message);
-      return res.status(500).send("Server Error");
+      const notes = req.body.notes || "";
+      const { products, total } = cart;
+
+      order = await new Order({
+        user: req.user.id,
+        products,
+        total,
+        notes,
+        profile,
+        active: true,
+        status: "sent"
+      });
+      cart.products = [];
+      cart.total = 0;
+      await cart.save();
+      await order.save();
+      res.json(order);
+    } else {
+      res.status(400).json({ msg: "You may only place one order at a time" });
     }
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send("Server Error");
   }
-);
+});
 
 // @route         GET /orders
 // @description   Get all orders
@@ -59,7 +58,8 @@ router.get("/", requireDriver, async (req, res) => {
   try {
     const orders = await Order.find()
       .populate("user", ["name"])
-      .populate("productList.product");
+      .populate("profile")
+      .populate("products");
     res.json(orders);
   } catch (err) {
     console.error(err.message);
@@ -72,9 +72,7 @@ router.get("/", requireDriver, async (req, res) => {
 // @access        Users
 router.get("/me", requireLogin, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user.id }).populate(
-      "productList.product"
-    );
+    const orders = await Order.find({ user: req.user.id }).populate("products");
     if (!orders) {
       return res.status(400).send("No orders found");
     }
@@ -90,8 +88,9 @@ router.get("/me", requireLogin, async (req, res) => {
 // @access        Drivers only
 router.get("/activeOrders", requireDriver, async (req, res) => {
   try {
-    const orders = await Order.find({ active: true });
-    console.log(orders);
+    const orders = await Order.find({ active: true })
+      .populate("user", "name")
+      .populate("profile");
     if (!orders) {
       return res.status(400).send("No active orders found");
     }
@@ -113,7 +112,7 @@ router.get("/:orderId", requireDriver, async (req, res) => {
   try {
     const order = await Order.findById(orderId)
       .populate("user", ["name"])
-      .populate("productList.product");
+      .populate("products");
 
     if (!order) {
       return res.status(400).json({ msg: "No order found" });
@@ -134,9 +133,7 @@ router.get("/users/:userId", requireDriver, async (req, res) => {
     return res.status(400).json({ msg: "Invalid user ID" });
   }
   try {
-    const orders = await Order.find({ user: userId }).populate(
-      "productList.product"
-    );
+    const orders = await Order.find({ user: userId }).populate("products");
     if (!orders) {
       return res.status(400).json({ msg: "No orders found for this user" });
     }
@@ -155,7 +152,9 @@ router.get("/activeOrders/me", requireLogin, async (req, res) => {
     const order = await Order.findOne({
       user: req.user.id,
       active: true
-    }).populate("productList.product");
+    })
+      .populate("products")
+      .populate("profile");
     if (!order) {
       return res.status(400).send("No order found");
     }
@@ -166,15 +165,17 @@ router.get("/activeOrders/me", requireLogin, async (req, res) => {
   }
 });
 
-// @route         GET /drivers/orders/active
+// @route         GET /activeOrders/drivers/me
 // @description   Get all active orders assigned to driver logged in
 // @access        Drivers only
-router.get("/orders/active", requireDriver, async (req, res) => {
+router.get("/activeOrders/driver/me", requireDriver, async (req, res) => {
   try {
     const order = await Order.find({
       driver: req.user.id,
       active: true
-    }).populate("productList.product");
+    })
+      .populate("products")
+      .populate("profile");
     if (!order) {
       return res.status(400).send("No order found");
     }
@@ -264,30 +265,6 @@ router.put("/completed/:orderId", requireDriver, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(400).json({ msg: "Server error" });
-  }
-});
-
-// @route         PUT /orders
-// @description   Edit logged in user's current order
-// @access        Users
-router.put("/", requireLogin, async (req, res) => {
-  try {
-    const order = await Order.findOne({
-      user: req.user.id,
-      active: true
-    });
-    if (!order) {
-      return res.status(400).send("No order found");
-    }
-    const { productList } = req.body;
-    const notes = req.body.notes || "";
-    order.productList = productList;
-    order.notes = notes;
-    await order.save();
-    res.json(order);
-  } catch (err) {
-    console.log(err);
-    res.status(400).send("Server error");
   }
 });
 

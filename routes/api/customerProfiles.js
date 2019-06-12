@@ -1,10 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { check, validationResult } = require("express-validator/check");
+
+// models //
 const CustomerProfile = require("../../models/CustomerProfile");
+const Cart = require("../../models/Cart");
+
+// middleware //
 const requireLogin = require("../../middleware/requireLogin");
 const requireDriver = require("../../middleware/requireDriver");
 const isValidObjectId = require("mongoose").Types.ObjectId.isValid;
+const { check, validationResult } = require("express-validator/check");
 
 // @route         POST api/customerProfiles
 // @description   Create a customer profile
@@ -39,7 +44,10 @@ router.post(
         phoneNumber,
         age
       });
+      const cart = await new Cart({ user: req.user.id });
+
       await profile.save();
+      await cart.save();
       res.json(profile);
     } catch (err) {
       console.error(err.message);
