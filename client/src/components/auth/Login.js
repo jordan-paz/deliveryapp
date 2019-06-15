@@ -15,9 +15,9 @@ const Login = ({ login, isAuthenticated }) => {
   const onChange = async e =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Redirect to dashboard if logged in
+  // Redirect to shop if logged in
   if (isAuthenticated) {
-    return <Redirect to="dashboard" />;
+    return <Redirect to="shop" />;
   }
 
   const onSubmit = async e => {
