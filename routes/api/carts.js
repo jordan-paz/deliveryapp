@@ -25,10 +25,11 @@ router.post(
       const product = await Product.findById(productId);
 
       if (!product) {
-        return res.status(400).json({ msg: "Product not found" });
+        return res.status(400).json({ msg: "Product not     found" });
       }
 
       const cart = await Cart.findOne({ user: req.user.id });
+
       let { products } = cart;
 
       for (i = 0; i < quantity; i++) {
@@ -37,7 +38,7 @@ router.post(
       }
       cart.products = products;
       await cart.save();
-      res.json({ msg: "Product added to cart", cart });
+      res.json(cart);
     } catch (err) {
       console.error(err.message);
       return res.status(500).send("Server Error");

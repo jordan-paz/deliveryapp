@@ -4,5 +4,6 @@ import auth from "./auth";
 import profile from "./profile";
 import user from "./user";
 import product from "./product";
+import cart from "./cart";
 
-export default combineReducers({ alert, auth, profile, user, product });
+export default combineReducers({ alert, auth, profile, user, product, cart });

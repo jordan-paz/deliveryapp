@@ -1,7 +1,11 @@
-import React from "react";
+import React, { Fragment } from "react";
 
 const Cart = props => {
-  return <div>Cart</div>;
+  return (
+    <Fragment>
+      <h1>Your Cart</h1>
+    </Fragment>
+  );
 };
 
 export default Cart;

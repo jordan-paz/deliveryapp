@@ -1,7 +1,7 @@
-import { GET_ALL_PRODUCTS, PRODUCT_ERROR } from "../actions/types";
+import { ADD_TO_CART, CART_ERROR } from "../actions/types";
 
 const initialState = {
-  products: [],
+  cart: [],
   loading: true,
   error: {}
 };
@@ -10,13 +10,13 @@ export default function(state = initialState, action) {
   const { type, payload } = action;
 
   switch (type) {
-    case GET_ALL_PRODUCTS:
+    case ADD_TO_CART:
       return {
         ...state,
-        products: payload,
+        cart: payload,
         loading: false
       };
-    case PRODUCT_ERROR:
+    case CART_ERROR:
       return {
         ...state,
         error: payload,

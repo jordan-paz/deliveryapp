@@ -10,10 +10,11 @@ const ProductList = ({ getAllProducts, products: { products, loading } }) => {
   }, [getAllProducts]);
 
   const renderProductThumbnail = product => {
-    const { name, price, description, imageUrls } = product;
+    const { name, price, description, imageUrls, _id } = product;
     return (
       <ProductThumbnail
-        key={name}
+        id={_id}
+        key={_id}
         name={name}
         price={price}
         description={description}

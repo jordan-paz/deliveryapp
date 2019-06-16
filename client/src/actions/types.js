@@ -15,3 +15,5 @@ export const GET_PRODUCT = "GET_PRODUCT";
 export const GET_ALL_PRODUCTS = "GET_ALL_PRODUCTS";
 export const PRODUCT_ERROR = "PRODUCT_ERROR";
 export const CLEAR_PROFILE = "CLEAR_PROFILE";
+export const ADD_TO_CART = "ADD_TO_CART";
+export const CART_ERROR = "CART_ERROR";
